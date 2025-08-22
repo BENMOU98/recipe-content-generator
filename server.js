@@ -71,21 +71,26 @@ async function checkApiKeyMiddleware(req, res, next) {
     }
   }
   
-  // Check if OpenAI API key is missing
-  const openaiKeyMissing = await isApiKeyMissing('openai');
+  // Check if OpenAI API key is missing - check environment first
+  const hasEnvKey = !!process.env.OPENAI_API_KEY;
   
-  if (openaiKeyMissing) {
-    // If it's an API request, return JSON error
-    if (req.path.startsWith('/api/')) {
-      return res.status(400).json({
-        success: false,
-        message: 'OpenAI API key is required. Please add your API key in the settings page.'
-      });
-    }
+  if (!hasEnvKey) {
+    // Only check database if no environment variable
+    const openaiKeyMissing = await isApiKeyMissing('openai');
     
-    // For regular page requests, redirect to settings with a warning
-    req.session.errorMessage = 'OpenAI API key is required to use this application. Please add your API key below.';
-    return res.redirect('/settings');
+    if (openaiKeyMissing) {
+      // If it's an API request, return JSON error
+      if (req.path.startsWith('/api/')) {
+        return res.status(400).json({
+          success: false,
+          message: 'OpenAI API key is required. Please add your API key in the settings page.'
+        });
+      }
+      
+      // For regular page requests, redirect to settings with a warning
+      req.session.errorMessage = 'OpenAI API key is required to use this application. Please add your API key below.';
+      return res.redirect('/settings');
+    }
   }
   
   next();
