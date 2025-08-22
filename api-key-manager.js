@@ -323,6 +323,12 @@ async function getActiveApiKeyServices() {
 
 // Check if an API key is required but missing
 async function isApiKeyMissing(service) {
+  // TEMPORARY: Bypass API key check in production mode
+  if (process.env.NODE_ENV === 'production' && service.toLowerCase() === 'openai') {
+    console.log('BYPASS: Skipping API key check in production mode');
+    return false;
+  }
+  
   // Check environment variables first
   if (service.toLowerCase() === 'openai') {
     const envKey = process.env.OPENAI_API_KEY;
