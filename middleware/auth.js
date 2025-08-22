@@ -207,37 +207,30 @@ function filterContentByRole(req, res, next) {
 // Updated version with getOne function imported from db.js
 async function attachUserToLocals(req, res, next) {
   try {
+    // TEMPORARY: Skip database queries that might be causing session issues
     if (req.session && req.session.user) {
-      // Copy the user from session to locals
+      console.log('Authenticated user:', req.session.user);
+      // Simple copy without database queries
       res.locals.user = { ...req.session.user };
+      res.locals.isAuthenticated = true;
       
-      // Add user stats for display in the sidebar
-      if (!res.locals.user.stats && req.session.user.id) {
-        // Quick stats for display in sidebar/layout
-        const recipes = await getOne(
-          `SELECT COUNT(*) as count FROM recipes WHERE owner_id = ?`,
-          [req.session.user.id]
-        );
-        
-        const processedKeywords = await getOne(
-          `SELECT COUNT(*) as count FROM keywords WHERE owner_id = ? AND status = 'processed'`,
-          [req.session.user.id]
-        );
-        
-        res.locals.user.stats = {
-          recipeCount: recipes ? recipes.count : 0,
-          processedKeywords: processedKeywords ? processedKeywords.count : 0,
-          totalContent: (recipes ? recipes.count : 0) + (processedKeywords ? processedKeywords.count : 0)
-        };
-      }
+      // Skip stats for now to avoid database issues
+      res.locals.user.stats = {
+        recipeCount: 0,
+        processedKeywords: 0,
+        totalContent: 0
+      };
+    } else {
+      res.locals.user = null;
+      res.locals.isAuthenticated = false;
     }
-    
-    // Set isAuthenticated flag
-    res.locals.isAuthenticated = !!(req.session && req.session.user);
     
     next();
   } catch (error) {
     console.error('Error in attachUserToLocals middleware:', error);
+    // Set defaults on error
+    res.locals.user = null;
+    res.locals.isAuthenticated = false;
     next();
   }
 }
