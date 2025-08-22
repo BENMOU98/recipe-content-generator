@@ -1,0 +1,22 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(curl:*)",
+      "Bash(dir)",
+      "Bash(node:*)",
+      "Bash(rm:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(npm start)",
+      "Bash(sqlite3:*)",
+      "Bash(npm install:*)",
+      "Bash(dir:*)",
+      "Bash(taskkill:*)",
+      "Bash(powershell:*)",
+      "Bash(cp:*)",
+      "Bash(timeout:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
