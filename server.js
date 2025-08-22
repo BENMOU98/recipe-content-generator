@@ -90,14 +90,23 @@ async function checkApiKeyMiddleware(req, res, next) {
 const app = express();
 const PORT = process.env.PORT || 3000;
 
-// Add this middleware early in your middleware chain
-app.use(async (req, res, next) => {
-  // Only update on GET requests to avoid unnecessary database writes
-  if (req.method === 'GET' && !req.path.startsWith('/api/')) {
-    await updateBaseUrl(req);
+// Initialize database IMMEDIATELY - before any middleware
+async function initializeDatabase() {
+  try {
+    console.log('Initializing database...');
+    // Run the database initialization
+    require('./init-db');
+    console.log('Database initialized successfully');
+    
+    // Wait a moment for database to be ready
+    await new Promise(resolve => setTimeout(resolve, 1000));
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+    throw error;
   }
-  next();
-});
+}
+
+// Database-dependent middleware will be added after database initialization
 
 
 app.use('/recipe_images', express.static(path.join(__dirname, 'recipe_images'), {
@@ -13310,27 +13319,25 @@ const listEndpoints = () => {
 // Call this at the very end, after all routes are registered
 listEndpoints();
 
-// Initialize database on startup
-async function initializeDatabase() {
-  try {
-    console.log('Initializing database...');
-    // Run the database initialization
-    require('./init-db');
-    console.log('Database initialized successfully');
-    
-    // Wait a moment for database to be ready
-    await new Promise(resolve => setTimeout(resolve, 1000));
-  } catch (error) {
-    console.error('Database initialization failed:', error);
-    throw error; // Throw error to prevent server from starting with broken database
-  }
-}
-
-// Initialize database BEFORE starting server
+// Start server function
 async function startServer() {
   try {
     // Initialize database first
     await initializeDatabase();
+    
+    // Now add database-dependent middleware
+    app.use(async (req, res, next) => {
+      // Only update on GET requests to avoid unnecessary database writes
+      if (req.method === 'GET' && !req.path.startsWith('/api/')) {
+        try {
+          await updateBaseUrl(req);
+        } catch (error) {
+          console.error('Error updating base URL:', error);
+          // Continue anyway, don't break the request
+        }
+      }
+      next();
+    });
     
     // Start server only after database is ready
     app.listen(PORT, () => {
