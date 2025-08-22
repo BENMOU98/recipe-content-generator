@@ -13310,10 +13310,26 @@ const listEndpoints = () => {
 // Call this at the very end, after all routes are registered
 listEndpoints();
 
+// Initialize database on startup
+async function initializeDatabase() {
+  try {
+    console.log('Initializing database...');
+    // Run the database initialization
+    require('./init-db');
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Database initialization failed:', error);
+    console.log('App will continue, but some features may not work properly');
+  }
+}
+
 // Start server
-app.listen(PORT, () => {
+app.listen(PORT, async () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log('Discord endpoint should now be accessible at: POST /api/test-discord-connection');
+  
+  // Initialize database after server starts
+  await initializeDatabase();
 });
 
 module.exports = app;

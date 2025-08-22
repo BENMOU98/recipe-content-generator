@@ -1,10 +1,26 @@
 // Database utility module for interacting with the SQLite database
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 const { v4: uuidv4 } = require('uuid');
 
+// Ensure data directory exists
+const dataDir = path.join(__dirname, 'data');
+if (!fs.existsSync(dataDir)) {
+    fs.mkdirSync(dataDir, { recursive: true });
+    console.log('Created data directory');
+}
+
 // Create a connection to the database
-const db = new sqlite3.Database(path.join(__dirname, 'data', 'recipes.db'));
+const dbPath = path.join(__dirname, 'data', 'recipes.db');
+console.log('Database path:', dbPath);
+const db = new sqlite3.Database(dbPath, (err) => {
+    if (err) {
+        console.error('Error opening database:', err.message);
+    } else {
+        console.log('Connected to SQLite database successfully');
+    }
+});
 
 // Add at the beginning of db.js
 const originalRunQuery = runQuery;
