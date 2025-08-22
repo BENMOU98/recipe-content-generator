@@ -2279,6 +2279,19 @@ Be detailed but concise, and ensure the recipe is delicious and practical.`,
 // Make the moment library available to templates
 app.locals.moment = moment;
 
+// Health check route for Railway
+app.get('/health', (req, res) => {
+  res.status(200).json({ 
+    status: 'OK', 
+    timestamp: new Date().toISOString(),
+    message: 'Server is running'
+  });
+});
+
+// Basic status route (alternative health check)
+app.get('/status', (req, res) => {
+  res.status(200).send('OK');
+});
 
 // Home page - now shows recent recipes
 // Home page - now shows recent recipes with organization filtering
@@ -13322,10 +13335,7 @@ listEndpoints();
 // Start server function
 async function startServer() {
   try {
-    // Initialize database first
-    await initializeDatabase();
-    
-    // Now add database-dependent middleware
+    // Add basic middleware first
     app.use(async (req, res, next) => {
       // Only update on GET requests to avoid unnecessary database writes
       if (req.method === 'GET' && !req.path.startsWith('/api/')) {
@@ -13339,11 +13349,23 @@ async function startServer() {
       next();
     });
     
-    // Start server only after database is ready
-    app.listen(PORT, () => {
+    // Start server first
+    const server = app.listen(PORT, () => {
       console.log(`Server running on http://localhost:${PORT}`);
       console.log('Discord endpoint should now be accessible at: POST /api/test-discord-connection');
     });
+    
+    // Initialize database in background (non-blocking)
+    initializeDatabase()
+      .then(() => {
+        console.log('Database initialization completed successfully');
+      })
+      .catch((error) => {
+        console.error('Database initialization failed, but server is still running:', error);
+        console.log('Some features may not work until database is properly set up');
+      });
+      
+    return server;
   } catch (error) {
     console.error('Failed to start server:', error);
     process.exit(1);
