@@ -13317,19 +13317,33 @@ async function initializeDatabase() {
     // Run the database initialization
     require('./init-db');
     console.log('Database initialized successfully');
+    
+    // Wait a moment for database to be ready
+    await new Promise(resolve => setTimeout(resolve, 1000));
   } catch (error) {
     console.error('Database initialization failed:', error);
-    console.log('App will continue, but some features may not work properly');
+    throw error; // Throw error to prevent server from starting with broken database
   }
 }
 
-// Start server
-app.listen(PORT, async () => {
-  console.log(`Server running on http://localhost:${PORT}`);
-  console.log('Discord endpoint should now be accessible at: POST /api/test-discord-connection');
-  
-  // Initialize database after server starts
-  await initializeDatabase();
-});
+// Initialize database BEFORE starting server
+async function startServer() {
+  try {
+    // Initialize database first
+    await initializeDatabase();
+    
+    // Start server only after database is ready
+    app.listen(PORT, () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+      console.log('Discord endpoint should now be accessible at: POST /api/test-discord-connection');
+    });
+  } catch (error) {
+    console.error('Failed to start server:', error);
+    process.exit(1);
+  }
+}
+
+// Start the application
+startServer();
 
 module.exports = app;
