@@ -38,8 +38,12 @@ const { updateBaseUrl } = require('./utils/url-helper');
 // Load environment variables
 dotenv.config();
 
-// Load environment variables
-dotenv.config();
+// Debug environment variables on startup
+console.log('Environment variables loaded:');
+console.log('NODE_ENV:', process.env.NODE_ENV);
+console.log('PORT:', process.env.PORT);
+console.log('Has OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY);
+console.log('OPENAI_API_KEY length:', process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0);
 
 // Add this code for API key management
 const { getApiKey, saveApiKey, isApiKeyMissing } = require('./api-key-manager');
@@ -48,6 +52,8 @@ const { getApiKey, saveApiKey, isApiKeyMissing } = require('./api-key-manager');
 async function checkApiKeyMiddleware(req, res, next) {
   // Skip check for authentication-related routes and public routes
   const exemptRoutes = [
+    '/health',
+    '/status', 
     '/login', 
     '/register',
     '/logout',
@@ -2284,7 +2290,13 @@ app.get('/health', (req, res) => {
   res.status(200).json({ 
     status: 'OK', 
     timestamp: new Date().toISOString(),
-    message: 'Server is running'
+    message: 'Server is running',
+    env: {
+      NODE_ENV: process.env.NODE_ENV,
+      PORT: process.env.PORT,
+      hasOpenAI: !!process.env.OPENAI_API_KEY,
+      openAILength: process.env.OPENAI_API_KEY ? process.env.OPENAI_API_KEY.length : 0
+    }
   });
 });
 
