@@ -323,8 +323,20 @@ async function getActiveApiKeyServices() {
 
 // Check if an API key is required but missing
 async function isApiKeyMissing(service) {
+  // Check environment variables first
+  if (service.toLowerCase() === 'openai') {
+    const envKey = process.env.OPENAI_API_KEY;
+    if (envKey && envKey.length > 0) {
+      console.log(`Found ${service} API key in environment variables (length: ${envKey.length})`);
+      return false;
+    }
+  }
+  
+  // Fall back to database check
   const key = await getApiKey(service);
-  return key === null || key === '';
+  const missing = key === null || key === '';
+  console.log(`API key missing check for ${service}: ${missing}`);
+  return missing;
 }
 
 // Initialize the API key table when this module is loaded
